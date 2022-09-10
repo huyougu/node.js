@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+
+<body>
+    <h1> 登录界面</h1>
+    <div>
+        <div>用户名: <input type="text" id="username"> </div>
+        <div>密码: <input type="password" id="password"> </div>
+
+        <div> <button id="login">登录</button> </div>
+    </div>
+</body>
+
+</html>
+<script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+<script>
+    axios.interceptors.request.use(function(config) {
+        // Do something before request is sent
+        return config;
+    }, function(error) {
+        // Do something with request error
+        return Promise.reject(error);
+    });
+
+    // Add a response interceptor
+
+    axios.interceptors.response.use(function(response) {
+        // Any status code that lie within the range of 2xx cause this function to trigger
+        // Do something with response data
+        // console.log(response.headers);
+        const {
+            authorization
+        } = response.headers
+        authorization && localStorage.setItem("token", authorization)
+        return response;
+    }, function(error) {
+        // Any status codes that falls outside the range of 2xx cause this function to trigger
+        // Do something with response error
+        return Promise.reject(error);
+    });
+</script>
+<script>
+    var username = document.querySelector("#username")
+    var password = document.querySelector("#password")
+    var login = document.querySelector("#login")
+    login.onclick = () => {
+        // console.log(username.value, password.value);
+        // fetch("/api/login", {
+        //     method: "POST",
+        //     body: JSON.stringify({
+        //         username: username.value,
+        //         password: password.value,
+
+        //     }),
+        //     headers: {
+        //         "Content-Type": "application/json"
+        //     }
+        // }).then(res => res.json()).then(res => {
+        //     console.log(res);
+        //     if (res.ok === 1) {
+
+        //         // location.href = "/"
+        //     } else {
+        //         alert("用户名密码不匹配")
+        //     }
+
+        // })
+        axios.post("/api/login", {
+            username: username.value,
+            password: password.value,
+
+        }).then(res => {
+            console.log(res.data);
+            if (res.data.ok === 1) {
+                localStorage.setItem("username", username.value)
+                    //存储token
+                location.href = "/chat"
+            } else {
+                alert("用户名密码不匹配")
+            }
+        })
+    }
+</script>

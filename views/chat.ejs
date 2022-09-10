@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <script src="/javascripts/socketio.js"></script>
+
+</head>
+
+<body>
+    <h1>聊天室</h1>
+    <h1>当前用户: <b id="user"></b> <img src="" alt="" id="avatar" style="height: 100px;width:100px;position: relative;left: 30px;"> </h1>
+
+    <!-- 建立socket连接 带着token验证 ,后端验证 -->
+    <input type="text" id="text"> <button id="send"> send</button>
+    <select name="" id="select">
+
+    </select>
+
+    <script>
+        var avatar = document.querySelector("#avatar")
+        const socket = io(`ws://localhost:3000?token=${localStorage.getItem("token")}`);
+        var select = document.querySelector("#select")
+        var send = document.querySelector("#send")
+        var text = document.querySelector("#text")
+        var user = document.querySelector("#user")
+        user.innerHTML = localStorage.getItem("username")
+
+        fetch("/api/user").then(res => res.json()).then(res => {
+
+            res.forEach(item => {
+                if (item.username == localStorage.getItem("username")) {
+                    avatar.src = `${item.avatar}`
+                }
+            });
+        })
+
+
+        const WebSocketType = {
+            Error: 0, //错误
+            GroupList: 1, //获取列表
+            GroupChat: 2, //群聊
+            SingleChat: 3 //私聊
+
+        }
+
+        function createMessage(data, to) {
+            return {
+                data,
+                to
+            }
+        }
+        send.onclick = function send() {
+            if (select.value == "all") {
+                // console.log("群发");
+                socket.emit(WebSocketType.GroupChat, createMessage(text.value))
+            } else {
+                socket.emit(WebSocketType.SingleChat, createMessage(text.value, select.value))
+            }
+            text.value = ""
+        }
+
+        socket.on(WebSocketType.SingleChat, (msg) => {
+            var title = msg.user ? msg.user.username : "广播"
+            console.log(title + "(私聊):" + msg.data);
+        })
+
+        socket.on(WebSocketType.GroupChat, (msg) => {
+            var title = msg.user ? msg.user.username : "广播"
+            console.log(title + ":" + msg.data);
+        })
+        socket.on(WebSocketType.Error, (msg) => {
+            localStorage.removeItem("token")
+            location.href = "/login"
+        })
+        socket.on(WebSocketType.GroupList, (msgObj) => {
+            const onlinelist = msgObj.data
+            select.innerHTML = ""
+            select.innerHTML = `<option value="all"> all </option>` + onlinelist.map(item => `
+                    <option value="${item.username}"> ${item.username} </option>
+                    `).join("")
+
+        })
+
+        //
+    </script>
+</body>
+
+</html>
